@@ -1,55 +1,45 @@
-import React from "react";
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { RootState} from '../store';
+import React from 'react'
+import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { RootState } from '../store'
 
 export interface PlayerState {
   players: {
-    player1: string,
+    player1: string
     player2: string
+    AI: string
   }
-  timer: {
-    initialTime: number,
-    startTimer: boolean
-  }
-  start: boolean
+  nextTurn: boolean
+  win: boolean
 }
 const initialState: PlayerState = {
-  players : {
+  players: {
     player1: '',
     player2: '',
+    AI: 'AI',
   },
-  timer: {
-    initialTime: 10,
-    startTimer: false
-  },
-  start: false
-};
+  nextTurn: false,
+  win: false,
+}
 
 export const playerSlice = createSlice({
   name: 'players',
   initialState,
   reducers: {
     firstPlayer: (state, action: PayloadAction<string>) => {
-       state.players.player1 = action.payload
+      state.players.player1 = action.payload
     },
     secondPlayer: (state, action: PayloadAction<string>) => {
-      state.players.player2 = action.payload;
+      state.players.player2 = action.payload
     },
-    startGame: (state, action: PayloadAction<number>) => {
-      state.timer.initialTime = action.payload;
-      if(action.payload > 0) {
-        setTimeout(() => {
-         return action.payload--
-        }, 1000);
-      }
+    winGame: (state, action: PayloadAction<boolean>) => {
+      state.win = action.payload
     },
-  }
+  },
 })
 
+export const { firstPlayer, secondPlayer, winGame } = playerSlice.actions
+export const selectPlayers = (state: RootState) => state.player.players
+export const selectWinGame = (state: RootState) => state.player.win
+export const selectNextTurn = (state: RootState) => state.player.nextTurn
 
-export const { firstPlayer, secondPlayer, startGame } = playerSlice.actions;
-export const selectPlayers = (state: RootState) => state.player.players;
-export const selectTimer = (state: RootState) => state.player.timer;
-export const selectStart = (state: RootState) => state.player.start;
-
-export default playerSlice.reducer;
+export default playerSlice.reducer
