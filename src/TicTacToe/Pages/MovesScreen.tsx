@@ -1,108 +1,155 @@
-import React, { useState } from 'react';
-import styled from 'styled-components'
-import { calculateMovements } from '../Components/CalculateMoves';
-import { useAppSelector } from '../hooks';
-import { selectPlayers, selectTimer } from '../Redux/playerSlice';
+import { useEffect, useState } from 'react'
+import { useAppDispatch, useAppSelector } from '../hooks'
+import { selectPlayers } from '../Redux/playerSlice'
+import { FindBestMovements } from '../Components/Scores'
+import { CalculateMovements } from '../Components/CalculateMoves'
+import { SymbolesO, SymbolesX } from '../Components/Symbole'
+import { Lists, ButtonContainer, Button } from '../globalStyles/fonts/styles'
+import { selectTimer } from '../Redux/timerSlice'
+import { startGame } from '../Redux/startGameSlice'
 
-export function MovesScreen () {
-  const player = useAppSelector(selectPlayers)
+export function MovesScreen() {
+  const dispatch = useAppDispatch()
+  const players = useAppSelector(selectPlayers)
   const timer = useAppSelector(selectTimer)
-  const [ nextTurn, setNextTurn ] = useState<boolean>(true);
-  const [ moves, setMoves ] = useState(Array(9).fill(null));
-  const winner = calculateMovements(moves);
+  const [countTime, setCountTime] = useState(timer)
+  const [moves, setMoves] = useState({
+    history: [
+      {
+        squares: Array(9).fill(null),
+      },
+    ],
+    stepNumber: 0,
+    isNext: true,
+  })
 
+  function handleMoves(i: any) {
+    const movements = moves.history.slice(0, moves.stepNumber + 1)
+    const current = movements[moves.history.length - 1]
+    const squares = current.squares.slice()
+    if (CalculateMovements(squares) || squares[i]) {
+      return Promise.resolve()
+    }
+    squares[i] = moves.isNext ? <SymbolesX /> : <SymbolesO />
+    const nextMovement = {
+      history: movements.concat([{ squares: squares }]),
+      stepNumber: movements.length,
+      isNext: !moves.isNext,
+    }
+    return new Promise<void>((resolve) => {
+      setMoves(nextMovement)
+      return resolve
+    })
+  }
+
+  async function handleClick(i: any) {
+    await handleMoves(i)
+    const click: any = moves.history[moves.stepNumber].squares.slice()
+    const bestMoves = FindBestMovements(
+      click,
+      moves.isNext ? <SymbolesX /> : <SymbolesO />
+    )
+
+    if (bestMoves !== -1) {
+      await handleMoves(bestMoves)
+    }
+    randomSet(i)
+  }
+
+  function randomSet(step: any) {
+    setMoves({
+      stepNumber: step,
+      isNext: step % 2 === 0,
+      history: [],
+    })
+  }
+
+  const history = moves.history
+  const current = history[moves.stepNumber]
+  const winner = CalculateMovements(current.squares)
+
+  let capitaliseName2 =
+    players.player2.charAt(0).toUpperCase() +
+    players.player2.toLocaleLowerCase().slice(1)
+  let capitaliseName1 =
+    players.player1.charAt(0).toUpperCase() +
+    players.player1.toLocaleLowerCase().slice(1)
+
+  useEffect(() => {
+    let myInterval = setInterval(() => {
+      countTime > 0 && setCountTime(countTime - 1)
+    }, 1000)
+    return () => {
+      clearInterval(myInterval)
+    }
+  }, [countTime])
+
+  function FillBoard(moves: any) {
+    for (let i = 0; i < moves.length; i++) {
+      if (moves[i] === null) {
+        return false
+      }
+    }
+    return true
+  }
+
+  function displayStaus() {
+    console.log('player', capitaliseName2)
+    if (countTime === 0) {
+      return (
+        <h3>
+          Time out- {moves.isNext ? capitaliseName1 : capitaliseName2} won
+        </h3>
+      )
+    } else if (FillBoard(current.squares)) {
+      return <h3>Draw!!</h3>
+    } else if (winner === capitaliseName1) {
+      return <h3>{capitaliseName1} won</h3>
+    } else if (winner === capitaliseName2) {
+      return <h3>{capitaliseName2} won</h3>
+    } else {
+      return <h3>{moves.isNext ? capitaliseName1 : capitaliseName2}'s turn</h3>
+    }
+  }
 
   function renderButtons(i: any) {
-    const handleMoves = () => {
-      if (moves[i] != null || winner != null) {
-            return;
-          }
-          const nextmoves = moves.slice();
-          nextmoves[i] = (nextTurn ? "X" : 'O');
-          setMoves(nextmoves);
-          setNextTurn(!nextTurn);
-    }
-    
-  return <button value={moves[i]} onClick={handleMoves}>{moves[i]}</button>
-}
-
-  let capitaliseName2 = player.player2.charAt(0).toUpperCase() + player.player2.toLocaleLowerCase().slice(1)
-  let capitaliseName1 = player.player1.charAt(0).toUpperCase() + player.player1.toLocaleLowerCase().slice(1)
-  
+    return (
+      <button
+        value={current.squares[i]}
+        onClick={countTime > 0 ? () => handleClick(i) : () => {}}>
+        {current.squares[i]}
+      </button>
+    )
+  }
 
   return (
-    <Wrapper>
-      <h3>{nextTurn ? capitaliseName1 : capitaliseName2}'s turn</h3>
-    <Lists>
-      <div>
+    <ButtonContainer>
+      {displayStaus()}
+      <Lists>
+        <div>
           {renderButtons(1)}
           {renderButtons(2)}
           {renderButtons(3)}
-      </div>
+        </div>
 
-      <div>
+        <div>
           {renderButtons(4)}
           {renderButtons(5)}
           {renderButtons(6)}
-      </div>
+        </div>
 
-      <div>
+        <div>
           {renderButtons(7)}
           {renderButtons(8)}
           {renderButtons(9)}
+        </div>
+      </Lists>
 
-      </div>
-    </Lists>
-
-      <span>time left {timer.initialTime} s</span>
-
-      <div>
-        <div >{}</div>
-        <div >{}</div>
-      </div>
-    </Wrapper>
-  );
+      {countTime > 0 ? (
+        <span>time left: {countTime}s</span>
+      ) : (
+        <Button onClick={() => dispatch(startGame())}>Restart</Button>
+      )}
+    </ButtonContainer>
+  )
 }
-
-const Wrapper = styled.div`
-position: relative;
-
-span {
-  margin-top: 100px;
-  font-size: 48px;
-  line-height: 48px;
-  color: #000000;
-}
-
-h3 {
-  font-size: 48px;
-line-height: 48px;
-}
-`
-
-const Lists = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 20px);
-  grid-gap: 100px;
-  margin-top: 78px;
-  margin-bottom: 70px;
-
-  div > button {
-    width: 118px;
-    height: 65px;
-    margin-bottom: 19px;
-    cursor: pointer;
-    background-color: transparent;
-    border: none;
-    outline: none;
-  }
-
-  div:nth-of-type(1), div:nth-of-type(2) {
-    border-right: solid 3px #545050;
-    width: fit-content;
-  }
-
-   div > button:nth-of-type(1),div > button:nth-of-type(2) {
-    border-bottom: solid 3px #545050;
-  }
-`
