@@ -65,7 +65,7 @@ export const Title = styled.h1`
 
 export const Input = styled.input`
   width: 100%;
-  font-size: 30px;
+  font-size: 20px;
   line-height: 48px;
   border: none;
   outline: none;
@@ -76,7 +76,7 @@ export const Input = styled.input`
   }
 `
 export const Button = styled.button`
-  font-size: 52px;
+  font-size: 42px;
   line-height: 72px;
   text-align: center;
   cursor: pointer;
@@ -94,7 +94,7 @@ export const Wrapper = styled.label`
   margin-bottom: 50px;
 `
 export const Image = styled.img`
-  max-width: 85px;
+  max-width: 55px;
 `
 
 export const TitleTimer = styled.span`
@@ -103,9 +103,9 @@ export const TitleTimer = styled.span`
   color: #000000;
 `
 export const InputTime = styled.input`
-  font-size: 45px;
+  font-size: 30px;
   line-height: 48px;
   border: none;
   outline: none;
-  max-width: 38px;
+  max-width: 55px;
 `

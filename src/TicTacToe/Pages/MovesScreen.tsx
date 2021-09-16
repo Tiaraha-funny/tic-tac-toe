@@ -7,6 +7,7 @@ import { SymbolesO, SymbolesX } from '../Components/Symbole'
 import { Lists, ButtonContainer, Button } from '../globalStyles/fonts/styles'
 import { selectTimer } from '../Redux/timerSlice'
 import { startGame } from '../Redux/startGameSlice'
+import { FillBoard } from '../Components/Board'
 
 export function MovesScreen() {
   const dispatch = useAppDispatch()
@@ -75,33 +76,32 @@ export function MovesScreen() {
     players.player1.charAt(0).toUpperCase() +
     players.player1.toLocaleLowerCase().slice(1)
 
+  const piecesCollector = moves.history.filter((item) => item !== null).length
   useEffect(() => {
     let myInterval = setInterval(() => {
-      countTime > 0 && setCountTime(countTime - 1)
+      if (piecesCollector !== 10) {
+        countTime > 0 && setCountTime(countTime - 1)
+      }
     }, 1000)
     return () => {
       clearInterval(myInterval)
     }
   }, [countTime])
 
-  function FillBoard(moves: any) {
-    for (let i = 0; i < moves.length; i++) {
-      if (moves[i] === null) {
-        return false
+  function displayStaus() {
+    if (countTime === 0) {
+      if (piecesCollector !== 10) {
+        return (
+          <h3>
+            Time out- {moves.isNext ? capitaliseName1 : capitaliseName2} won
+          </h3>
+        )
       }
     }
-    return true
-  }
-
-  function displayStaus() {
-    console.log('player', capitaliseName2)
-    if (countTime === 0) {
-      return (
-        <h3>
-          Time out- {moves.isNext ? capitaliseName1 : capitaliseName2} won
-        </h3>
-      )
+    if (piecesCollector === 10) {
+      return <h3>Draw!</h3>
     } else if (FillBoard(current.squares)) {
+      setCountTime(0)
       return <h3>Draw!!</h3>
     } else if (winner === capitaliseName1) {
       return <h3>{capitaliseName1} won</h3>
@@ -146,7 +146,7 @@ export function MovesScreen() {
       </Lists>
 
       {countTime > 0 ? (
-        <span>time left: {countTime}s</span>
+        <span>Time left: {countTime}s</span>
       ) : (
         <Button onClick={() => dispatch(startGame())}>Restart</Button>
       )}
