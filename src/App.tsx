@@ -4,6 +4,7 @@ import { useAppSelector } from './TicTacToe/hooks'
 import { MovesScreen } from './TicTacToe/Pages/MovesScreen'
 import { StartScreen } from './TicTacToe/Pages/StartScreen'
 import { selectStartGame } from './TicTacToe/Redux/startGameSlice'
+import './App.css'
 
 function App() {
   const start = useAppSelector(selectStartGame)

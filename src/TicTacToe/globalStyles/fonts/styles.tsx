@@ -2,8 +2,6 @@ import styled from 'styled-components'
 import { fonts } from './fonts'
 
 export const ButtonContainer = styled.div`
-  position: relative;
-
   span {
     margin-top: 100px;
     font-size: 38px;
@@ -103,9 +101,18 @@ export const TitleTimer = styled.span`
   color: #000000;
 `
 export const InputTime = styled.input`
+  :-webkit-inner-spin-button {
+    appearance: auto;
+    display: none;
+  }
   font-size: 30px;
   line-height: 48px;
   border: none;
   outline: none;
   max-width: 55px;
+`
+
+export const Draw = styled.button`
+  display: flex;
+  align-items: center;
 `
