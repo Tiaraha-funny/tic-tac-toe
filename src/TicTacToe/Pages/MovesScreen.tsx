@@ -1,19 +1,22 @@
 import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../hooks'
-import { selectPlayers } from '../Redux/playerSlice'
+import {
+  firstPlayerScore,
+  secondPlayerScore,
+  selectPlayers,
+} from '../Redux/playerSlice'
 import { FindBestMovements } from '../Components/Scores'
 import { CalculateMovements } from '../Components/CalculateMoves'
 import { SymbolesO, SymbolesX } from '../Components/Symbole'
 import { Lists, ButtonContainer, Button } from '../globalStyles/fonts/styles'
 import { selectTimer } from '../Redux/timerSlice'
 import { startGame } from '../Redux/startGameSlice'
-import { FillBoard } from '../Components/Board'
 
 export function MovesScreen() {
   const dispatch = useAppDispatch()
   const players = useAppSelector(selectPlayers)
   const timer = useAppSelector(selectTimer)
-  const [countTime, setCountTime] = useState(timer)
+  const [countTime, setCountTime] = useState<number>(timer)
   const [moves, setMoves] = useState({
     history: [
       {
@@ -31,7 +34,7 @@ export function MovesScreen() {
     if (CalculateMovements(squares) || squares[i]) {
       return Promise.resolve()
     }
-    squares[i] = moves.isNext ? <SymbolesX /> : <SymbolesO />
+    squares[i] = moves.isNext ? 'X' : 'O'
     const nextMovement = {
       history: movements.concat([{ squares: squares }]),
       stepNumber: movements.length,
@@ -46,28 +49,16 @@ export function MovesScreen() {
   async function handleClick(i: any) {
     await handleMoves(i)
     const click: any = moves.history[moves.stepNumber].squares.slice()
-    const bestMoves = FindBestMovements(
-      click,
-      moves.isNext ? <SymbolesX /> : <SymbolesO />
-    )
-
+    const bestMoves = FindBestMovements(click, moves.isNext ? 'X' : 'O')
     if (bestMoves !== -1) {
       await handleMoves(bestMoves)
     }
-    randomSet(i)
   }
 
-  function randomSet(step: any) {
-    setMoves({
-      stepNumber: step,
-      isNext: step % 2 === 0,
-      history: [],
-    })
-  }
-
-  const history = moves.history
-  const current = history[moves.stepNumber]
-  const winner = CalculateMovements(current.squares)
+  const history = moves?.history
+  const current = history[moves?.history.length - 1]
+  const winner = CalculateMovements(current?.squares)
+  const collectPieces = moves.history.filter((item) => item !== null).length
 
   let capitaliseName2 =
     players.player2.charAt(0).toUpperCase() +
@@ -76,11 +67,21 @@ export function MovesScreen() {
     players.player1.charAt(0).toUpperCase() +
     players.player1.toLocaleLowerCase().slice(1)
 
-  const piecesCollector = moves.history.filter((item) => item !== null).length
+  useEffect(() => {
+    countTime !== 0 && winner === 'X' && dispatch(firstPlayerScore())
+    countTime !== 0 && winner === 'O' && dispatch(secondPlayerScore())
+    if (countTime === 0 && moves.isNext && !winner && collectPieces !== 10) {
+      dispatch(secondPlayerScore())
+    }
+    if (countTime === 0 && !moves.isNext && !winner && collectPieces !== 10) {
+      dispatch(firstPlayerScore())
+    }
+  }, [moves.isNext, countTime, dispatch, winner, collectPieces])
+
   useEffect(() => {
     let myInterval = setInterval(() => {
-      if (piecesCollector !== 10) {
-        countTime > 0 && setCountTime(countTime - 1)
+      if (collectPieces !== 10) {
+        if (winner === undefined) countTime > 0 && setCountTime(countTime - 1)
       }
     }, 1000)
     return () => {
@@ -90,22 +91,18 @@ export function MovesScreen() {
 
   function displayStaus() {
     if (countTime === 0) {
-      if (piecesCollector !== 10) {
+      if (collectPieces !== 10) {
         return (
           <h3>
             Time out- {moves.isNext ? capitaliseName1 : capitaliseName2} won
           </h3>
         )
       }
-    }
-    if (piecesCollector === 10) {
+    } else if (collectPieces === 10) {
       return <h3>Draw!</h3>
-    } else if (FillBoard(current.squares)) {
-      setCountTime(0)
-      return <h3>Draw!!</h3>
-    } else if (winner === capitaliseName1) {
+    } else if (winner === 'X') {
       return <h3>{capitaliseName1} won</h3>
-    } else if (winner === capitaliseName2) {
+    } else if (winner === 'O') {
       return <h3>{capitaliseName2} won</h3>
     } else {
       return <h3>{moves.isNext ? capitaliseName1 : capitaliseName2}'s turn</h3>
@@ -113,43 +110,129 @@ export function MovesScreen() {
   }
 
   function renderButtons(i: any) {
+    function symboles() {
+      if (current.squares[i] === 'X') {
+        return <SymbolesX />
+      } else if (current.squares[i] === 'O') {
+        return <SymbolesO />
+      } else {
+        return current.squares[i]
+      }
+    }
     return (
       <button
         value={current.squares[i]}
-        onClick={countTime > 0 ? () => handleClick(i) : () => {}}>
-        {current.squares[i]}
+        disabled={countTime === 0}
+        onClick={() => handleClick(i)}>
+        {symboles()}
       </button>
     )
+  }
+
+  function restartGame() {
+    const restart = (
+      <Button onClick={() => dispatch(startGame())}>Restart</Button>
+    )
+    if (collectPieces === 10) {
+      if (winner === undefined) {
+        return restart
+      }
+    } else if (countTime > 0) {
+      if (winner === undefined) {
+        return <span>Time left: {countTime}s</span>
+      } else {
+        return restart
+      }
+    }
+    return restart
+  }
+
+  function drawLine() {
+    const topline =
+      [current.squares[0], current.squares[1], current.squares[2]].join('') ===
+        'XXX' ||
+      [current.squares[0], current.squares[1], current.squares[2]].join('') ===
+        'OOO'
+    const centerline =
+      [current.squares[3], current.squares[4], current.squares[5]].join('') ===
+        'XXX' ||
+      [current.squares[3], current.squares[4], current.squares[5]].join('') ===
+        'OOO'
+    const bottomline =
+      [current.squares[6], current.squares[7], current.squares[8]].join('') ===
+        'XXX' ||
+      [current.squares[6], current.squares[7], current.squares[8]].join('') ===
+        'OOO'
+    const leftline =
+      [current.squares[2], current.squares[4], current.squares[6]].join('') ===
+        'XXX' ||
+      [current.squares[2], current.squares[4], current.squares[6]].join('') ===
+        'OOO'
+    const rightline =
+      [current.squares[0], current.squares[4], current.squares[8]].join('') ===
+        'XXX' ||
+      [current.squares[0], current.squares[4], current.squares[8]].join('') ===
+        'OOO'
+    const verticalLeftline =
+      [current.squares[0], current.squares[3], current.squares[6]].join('') ===
+        'XXX' ||
+      [current.squares[0], current.squares[3], current.squares[6]].join('') ===
+        'OOO'
+    const verticalMiddleline =
+      [current.squares[1], current.squares[4], current.squares[7]].join('') ===
+        'XXX' ||
+      [current.squares[1], current.squares[4], current.squares[7]].join('') ===
+        'OOO'
+    const verticalRightline =
+      [current.squares[2], current.squares[5], current.squares[8]].join('') ===
+        'XXX' ||
+      [current.squares[2], current.squares[5], current.squares[8]].join('') ===
+        'OOO'
+
+    if (topline) {
+      return 'top'
+    } else if (centerline) {
+      return 'center'
+    } else if (bottomline) {
+      return 'bottom'
+    } else if (rightline) {
+      return 'right'
+    } else if (leftline) {
+      return 'left'
+    } else if (verticalLeftline) {
+      return 'vertical-left'
+    } else if (verticalRightline) {
+      return 'Vertical-right'
+    } else if (verticalMiddleline) {
+      return 'Vertical-middle'
+    }
   }
 
   return (
     <ButtonContainer>
       {displayStaus()}
+
       <Lists>
-        <div>
+        <div className={drawLine()}>
           {renderButtons(1)}
           {renderButtons(2)}
           {renderButtons(3)}
         </div>
 
-        <div>
+        <div className={drawLine()}>
           {renderButtons(4)}
           {renderButtons(5)}
           {renderButtons(6)}
         </div>
 
-        <div>
+        <div className={drawLine()}>
           {renderButtons(7)}
           {renderButtons(8)}
           {renderButtons(9)}
         </div>
       </Lists>
 
-      {countTime > 0 ? (
-        <span>Time left: {countTime}s</span>
-      ) : (
-        <Button onClick={() => dispatch(startGame())}>Restart</Button>
-      )}
+      {restartGame()}
     </ButtonContainer>
   )
 }

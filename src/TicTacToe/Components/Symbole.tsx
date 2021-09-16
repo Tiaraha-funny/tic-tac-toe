@@ -11,5 +11,5 @@ export function SymbolesO() {
 }
 
 const Image = styled.img`
-  max-width: 50px;
+  max-width: 35px;
 `

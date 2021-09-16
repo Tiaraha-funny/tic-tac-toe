@@ -3,12 +3,10 @@ import { RootState } from '../store'
 
 export interface StartState {
   start: boolean
-  status: string
 }
 
 const initialState: StartState = {
   start: false,
-  status: 'start',
 }
 
 export const startSlice = createSlice({
@@ -17,7 +15,6 @@ export const startSlice = createSlice({
   reducers: {
     startGame: (state) => {
       state.start = !state.start
-      state.status = 'restart'
     },
     handleStartgame: (state, action: PayloadAction<boolean>) => {
       state.start = action.payload

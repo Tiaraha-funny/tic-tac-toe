@@ -1,13 +1,11 @@
 import { FillBoard } from './Board'
 import { CalculateMovements } from './CalculateMoves'
-import { SymbolesO, SymbolesX } from './Symbole'
 
 export function FindBestMovements(moves: [], player: any) {
-  const opponent = player === <SymbolesX /> ? <SymbolesO /> : <SymbolesX />
+  const opponent = player === 'X' ? 'O' : 'X'
 
   const minimax = (squares: string[], isMax: any) => {
     const winner = CalculateMovements(squares)
-    console.log('win', winner)
 
     if (winner === player) return { square: -1, score: 1 }
 
@@ -37,7 +35,6 @@ export function FindBestMovements(moves: [], player: any) {
           best.square = i
         }
       }
-      console.log('score', score)
     }
 
     return best
